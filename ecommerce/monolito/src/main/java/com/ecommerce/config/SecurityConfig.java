@@ -1,15 +1,16 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.ecommerce.config;
 
 import com.ecommerce.security.JwtAuthenticationFilter;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.info.*;
-import io.swagger.v3.oas.models.security.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,13 +24,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.concurrent.Executor;
-
-// ── SecurityConfig ───────────────────────────────────────────
+/**
+ *
+ * @author sangr
+ */
 @Configuration @EnableWebSecurity @EnableMethodSecurity @RequiredArgsConstructor
-class SecurityConfig {
+public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.userDetailsService = userDetailsService;
+    }
+    
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -61,32 +69,5 @@ class SecurityConfig {
 
     @Bean public AuthenticationManager authenticationManager(AuthenticationConfiguration c) throws Exception {
         return c.getAuthenticationManager();
-    }
-}
-
-// ── AsyncConfig ─────────────────────────────────────────────
-@Configuration @EnableAsync
-class AsyncConfig {
-    @Bean(name = "auditExecutor")
-    public Executor auditExecutor() {
-        ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-        ex.setCorePoolSize(2); ex.setMaxPoolSize(5);
-        ex.setQueueCapacity(100); ex.setThreadNamePrefix("audit-");
-        ex.initialize(); return ex;
-    }
-}
-
-// ── OpenApiConfig ────────────────────────────────────────────
-@Configuration
-class OpenApiConfig {
-    @Bean
-    public OpenAPI openAPI() {
-        return new OpenAPI()
-                .info(new Info().title("E-Commerce API v2 — Taller 2")
-                        .description("Monolito con Saga RabbitMQ, OpenTelemetry y microservicio de pagos.")
-                        .version("2.0.0"))
-                .components(new Components().addSecuritySchemes("bearerAuth",
-                        new SecurityScheme().type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer").bearerFormat("JWT")));
     }
 }

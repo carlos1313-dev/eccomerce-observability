@@ -8,6 +8,8 @@ import com.ecommerce.repository.OrderRepository;
 import com.ecommerce.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,13 @@ public class SagaCompensationListener {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final AuditService auditService;
+    private static final Logger log = LoggerFactory.getLogger(SagaCompensationListener.class);
+
+    public SagaCompensationListener(OrderRepository orderRepository, ProductRepository productRepository, AuditService auditService) {
+        this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
+        this.auditService = auditService;
+    }
 
     /**
      * HAPPY PATH: pago aprobado → confirmar orden.

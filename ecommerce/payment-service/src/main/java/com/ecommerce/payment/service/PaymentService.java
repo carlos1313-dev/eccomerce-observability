@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +25,13 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final RabbitTemplate   rabbitTemplate;
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
+    public PaymentService(PaymentRepository paymentRepository, RabbitTemplate rabbitTemplate) {
+        this.paymentRepository = paymentRepository;
+        this.rabbitTemplate = rabbitTemplate;
+    }
+    
     /**
      * Tasa de fallo simulada — configurable en application.properties.
      * app.payment.failure-rate=0.2 → 20% de los pagos fallan.

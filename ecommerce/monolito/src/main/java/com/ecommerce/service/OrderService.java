@@ -30,7 +30,15 @@ public class OrderService {
     private final ProductRepository  productRepository;
     private final UserRepository     userRepository;
     private final AuditService       auditService;
-    private final EventPublisher     eventPublisher;   // ← NUEVO: publicador de eventos
+    private final EventPublisher     eventPublisher;   //  NUEVO: publicador de eventos
+
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository, UserRepository userRepository, AuditService auditService, EventPublisher eventPublisher) {
+        this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
+        this.userRepository = userRepository;
+        this.auditService = auditService;
+        this.eventPublisher = eventPublisher;
+    }
 
     /**
      * FLUJO SAGA — Paso 1: crear la orden y publicar OrderCreated.
