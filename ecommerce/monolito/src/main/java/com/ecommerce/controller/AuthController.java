@@ -5,6 +5,7 @@
 package com.ecommerce.controller;
 
 import com.ecommerce.dto.Dtos;
+import com.ecommerce.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,8 +1,11 @@
 package com.ecommerce.events;
 
+import com.ecommerce.audit.AuditService;
 import com.ecommerce.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +25,11 @@ import org.springframework.stereotype.Component;
 public class EventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
+    private static final Logger log = LoggerFactory.getLogger(EventPublisher.class);
+
+    public EventPublisher(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+    }
 
     public void publishOrderCreated(Events.OrderCreatedEvent event) {
         try {

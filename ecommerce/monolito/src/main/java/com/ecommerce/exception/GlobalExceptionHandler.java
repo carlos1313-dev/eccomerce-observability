@@ -1,25 +1,33 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.ecommerce.exception;
 
+import com.ecommerce.audit.AuditService;
 import com.ecommerce.dto.Dtos;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-public class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String m) { super(m); } }
-
-class InsufficientStockException extends RuntimeException {
-    public InsufficientStockException(String m) { super(m); } }
-
+/**
+ *
+ * @author sangr
+ */
 @RestControllerAdvice @Slf4j
-class GlobalExceptionHandler {
+public class GlobalExceptionHandler {
+    
+        private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Dtos.ErrorResponse> notFound(ResourceNotFoundException e) {

@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-class JwtUtils {
+public class JwtUtils {
     @Value("${app.jwt.secret}") private String jwtSecret;
     @Value("${app.jwt.expiration}") private long jwtExpiration;
 
