@@ -1,0 +1,187 @@
+version: "3.9"
+
+# =============================================================
+# E-COMMERCE — TALLER 2
+# Un solo comando levanta todo:  docker compose up --build
+#
+# Servicios:
+#   postgres-mono   → BD del monolito        (puerto 5432)
+#   postgres-pay    → BD del payment-service (puerto 5433)
+#   rabbitmq        → Broker de mensajería   (5672 + UI 15672)
+#   lgtm            → Grafana + OTEL stack   (Grafana 3000, OTLP 4317/4318)
+#   monolito        → API principal          (puerto 8080)
+#   payment-service → Microservicio de pagos (puerto 8082)
+# =============================================================
+
+networks:
+  ecommerce-net:
+    driver: bridge
+
+volumes:
+  postgres-mono-data:
+  postgres-pay-data:
+  rabbitmq-data:
+  grafana-data:
+
+services:
+
+  # ── Base de datos del monolito ──────────────────────────────
+  postgres-mono:
+    image: postgres:15-alpine
+    container_name: postgres-mono
+    environment:
+      POSTGRES_DB: ecommerce_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-mono-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Base de datos exclusiva del payment-service ─────────────
+  # BD separada — cada microservicio es dueño de sus datos
+  postgres-pay:
+    image: postgres:15-alpine
+    container_name: postgres-pay
+    environment:
+      POSTGRES_DB: payments_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-pay-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payments_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── RabbitMQ — broker de eventos ───────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI → http://localhost:15672
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Grafana LGTM — observabilidad distribuida ───────────────
+  # Imagen all-in-one: Grafana + Loki + Tempo + Mimir + OTEL Collector
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    container_name: lgtm
+    ports:
+      - "3000:3000"   # Grafana UI → http://localhost:3000 (admin/admin)
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - grafana-data:/data
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  # ── Monolito — API principal ────────────────────────────────
+  monolito:
+    build:
+      context: ./monolito
+      dockerfile: Dockerfile
+    container_name: monolito
+    ports:
+      - "8080:8080"
+    environment:
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-mono:5432/ecommerce_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      # RabbitMQ
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      # JWT
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      APP_JWT_EXPIRATION: 86400000
+      # OpenTelemetry
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://lgtm:4318/v1/traces
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://lgtm:4318/v1/metrics
+      OTEL_SERVICE_NAME: ecommerce-monolito
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+    depends_on:
+      postgres-mono:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Payment Service — microservicio de pagos ────────────────
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    ports:
+      - "8082:8082"
+    environment:
+      # Database propia
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-pay:5432/payments_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      # RabbitMQ
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      # Tasa de fallo simulada (0.2 = 20%)
+      APP_PAYMENT_FAILURE_RATE: 0.2
+      # OpenTelemetry
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://lgtm:4318/v1/traces
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://lgtm:4318/v1/metrics
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://lgtm:4318
+    depends_on:
+      postgres-pay:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
