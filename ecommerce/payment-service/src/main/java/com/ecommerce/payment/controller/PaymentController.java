@@ -24,6 +24,10 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+    
     @GetMapping("/order/{orderId}")
     @Operation(summary = "Consultar pago por ID de orden")
     public ResponseEntity<Payment> getByOrderId(@PathVariable Long orderId) {

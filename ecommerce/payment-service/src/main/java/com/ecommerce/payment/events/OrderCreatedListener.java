@@ -4,6 +4,8 @@ import com.ecommerce.payment.config.RabbitMQConfig;
 import com.ecommerce.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +33,12 @@ import org.springframework.stereotype.Component;
 public class OrderCreatedListener {
 
     private final PaymentService paymentService;
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
+    public OrderCreatedListener(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+    
     @RabbitListener(queues = RabbitMQConfig.ORDER_CREATED_QUEUE)
     public void onOrderCreated(PaymentEvents.OrderCreatedEvent event) {
         log.info("[LISTENER] OrderCreated recibido → orderId={}, total={}",
