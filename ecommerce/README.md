@@ -1,6 +1,6 @@
 # E-Commerce — Taller 2 / Proyecto Final
 
-Evolución del monolito del Taller 1 hacia arquitectura orientada a eventos con observabilidad distribuida.
+Evolución del monolito del Taller 1 (repositorio https://github.com/carlos1313-dev/eccomerce-java-avanzado) hacia arquitectura orientada a eventos con observabilidad distribuida.
 
 ## Opción elegida: **B — Microservicio de Pagos por eventos**
 
