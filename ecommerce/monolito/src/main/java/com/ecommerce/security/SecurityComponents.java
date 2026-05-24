@@ -65,7 +65,7 @@ class JwtUtils {
 @Component
 @RequiredArgsConstructor
 @Slf4j
-class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
