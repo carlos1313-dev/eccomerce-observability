@@ -28,6 +28,17 @@ class AuthService {
     private final JwtUtils jwtUtils;
     private final AuditService auditService;
 
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, UserDetailsService userDetailsService, JwtUtils jwtUtils, AuditService auditService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.jwtUtils = jwtUtils;
+        this.auditService = auditService;
+    }
+    
+    
+
     @Transactional
     public Dtos.UserResponse register(Dtos.RegisterRequest req) {
         if (userRepository.existsByEmail(req.email()))

@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController @RequestMapping("/api/orders") @RequiredArgsConstructor
 @Tag(name = "Órdenes") @SecurityRequirement(name = "bearerAuth")
-class OrderController {
+public class OrderController {
     private final OrderService orderService;
 
     public OrderController(OrderService orderService) {
